@@ -10,6 +10,9 @@ dependencies = [
   "pydantic-settings>=2.4",
   "alembic>=1.13",
   "pgvector>=0.3",
+  "python-multipart>=0.0.9",
+  "pillow>=11",
+  "pillow-heif>=0.18",
 ]
 
 [project.optional-dependencies]
