@@ -2,9 +2,12 @@
 skip when it isn't running. Files go to a temporary folder, and every photo a
 test creates is deleted again."""
 
+import io
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
+from PIL import Image
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.db import engine
@@ -84,6 +87,25 @@ def test_get_one_and_file(client):
     assert res.content == data
 
 
+def test_resized_copies(client, storage):
+    photo_id = upload(client, make_image(size=(3000, 2000), exif=sample_exif())).json()["id"]
+
+    for size, expected in (("thumb", (640, 427)), ("display", (2048, 1365))):
+        res = client.get(f"/photos/{photo_id}/file", params={"size": size})
+        assert res.status_code == 200
+        assert res.headers["content-type"] == "image/jpeg"
+        assert "immutable" in res.headers["cache-control"]
+        assert Image.open(io.BytesIO(res.content)).size == expected
+
+    # Made once, then served from storage.
+    assert len(list(storage.root.rglob("variants/*/*.jpg"))) == 2
+
+
+def test_unknown_size_is_rejected(client):
+    photo_id = upload(client, make_image()).json()["id"]
+    assert client.get(f"/photos/{photo_id}/file", params={"size": "huge"}).status_code == 422
+
+
 def test_list_includes_upload(client):
     photo_id = upload(client, make_image(exif=sample_exif())).json()["id"]
 
@@ -92,9 +114,10 @@ def test_list_includes_upload(client):
     assert photo_id in [p["id"] for p in res.json()]
 
 
-def test_delete_removes_row_and_file(client, storage):
+def test_delete_removes_row_and_files(client, storage):
     photo_id = upload(client, make_image()).json()["id"]
     client.created.remove(photo_id)
+    client.get(f"/photos/{photo_id}/file", params={"size": "thumb"})
 
     assert client.delete(f"/photos/{photo_id}").status_code == 204
     assert client.get(f"/photos/{photo_id}").status_code == 404

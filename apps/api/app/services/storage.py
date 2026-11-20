@@ -1,9 +1,11 @@
-"""Saves original photo files.
+"""Saves original photo files and their resized copies.
 
-Phase 0 writes to a local folder. Later an S3 version with the same three
-methods replaces it, and the routers don't change.
+Phase 0 writes to a local folder. Later an S3 version with the same methods
+replaces it, and the routers don't change.
 """
 
+import os
+import uuid
 from pathlib import Path
 
 from app.config import settings
@@ -16,7 +18,16 @@ class LocalStorage:
     def save(self, key: str, data: bytes) -> None:
         path = self.path(key)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(data)
+        # Write to a temp file and rename, so a reader never sees a half-written file.
+        tmp = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+        tmp.write_bytes(data)
+        os.replace(tmp, path)
+
+    def read(self, key: str) -> bytes:
+        return self.path(key).read_bytes()
+
+    def exists(self, key: str) -> bool:
+        return self.path(key).is_file()
 
     def path(self, key: str) -> Path:
         path = (self.root / key).resolve()

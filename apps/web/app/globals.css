@@ -1,0 +1,84 @@
+:root {
+  --bg: #fafaf9;
+  --fg: #1c1917;
+  --muted: #78716c;
+  --line: #e7e5e4;
+  --accent: #1c1917;
+  --danger: #b91c1c;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+  line-height: 1.5;
+}
+
+a { color: inherit; }
+
+.site-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 24px 12px;
+}
+.site-title { font-size: 1.15rem; font-weight: 600; text-decoration: none; }
+.site-nav { display: flex; gap: 20px; font-size: 0.9rem; }
+.site-nav a { color: var(--muted); text-decoration: none; }
+.site-nav a:hover { color: var(--fg); }
+
+main { max-width: 1200px; margin: 0 auto; padding: 16px 24px 64px; }
+
+.muted { color: var(--muted); }
+
+/* Gallery: 4:5 tiles, the same ratio as the crop style */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.tile { display: block; text-decoration: none; }
+.tile img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  background: var(--line);
+}
+.tile-caption { font-size: 0.8rem; color: var(--muted); padding-top: 6px; }
+
+/* Photo page */
+.photo-page { display: grid; gap: 32px; grid-template-columns: minmax(0, 1fr) 280px; align-items: start; }
+@media (max-width: 860px) { .photo-page { grid-template-columns: 1fr; } }
+.photo-page img { display: block; width: 100%; height: auto; max-height: 85vh; object-fit: contain; background: var(--line); }
+
+.exif-card { border: 1px solid var(--line); background: #fff; padding: 20px; font-size: 0.9rem; }
+.exif-card h2 { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+.exif-card dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; }
+.exif-card dt { color: var(--muted); }
+.exif-card dd { margin: 0; }
+.exif-actions { display: flex; gap: 16px; margin-top: 20px; font-size: 0.85rem; }
+
+button, .button {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 8px 16px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.5; cursor: default; }
+button.link { border: 0; background: none; padding: 0; color: var(--danger); font-size: 0.85rem; }
+
+/* Upload */
+.upload-form { display: grid; gap: 16px; max-width: 560px; }
+.upload-list { list-style: none; padding: 0; margin: 0; font-size: 0.9rem; }
+.upload-list li { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.status-error { color: var(--danger); }
