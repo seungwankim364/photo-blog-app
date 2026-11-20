@@ -1,30 +1,51 @@
-import { getHealth } from "@/lib/api";
+import Link from "next/link";
 
-// Render on every request, so the status is live rather than baked in at build time.
+import { listPhotos, photoSrc, type Photo } from "@/lib/api";
+import { formatCamera, formatDate } from "@/lib/format";
+
+// Render on every request, so new uploads show up right away.
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
-  const health = await getHealth();
+export default async function Gallery() {
+  let photos: Photo[];
+  try {
+    photos = await listPhotos();
+  } catch {
+    return (
+      <main>
+        <p className="muted">
+          Couldn&apos;t load photos. Check the API on the <Link href="/status">status page</Link>.
+        </p>
+      </main>
+    );
+  }
 
-  const pgvector = !health.apiReachable
-    ? "unknown"
-    : health.pgvector
-      ? "installed"
-      : health.database === "up"
-        ? "not enabled (run the migration)"
-        : "unknown";
+  if (photos.length === 0) {
+    return (
+      <main>
+        <p className="muted">
+          No photos yet. <Link href="/upload">Upload the first one</Link>.
+        </p>
+      </main>
+    );
+  }
 
   return (
     <main>
-      <h1>Seungwan&apos;s Photo Blog</h1>
-      <p>Hello. The blog will live here.</p>
-      <h2>System check</h2>
-      <ul>
-        <li>API: {health.apiReachable ? "reachable" : "unreachable"}</li>
-        <li>Database: {health.database ?? "unknown"}</li>
-        <li>pgvector: {pgvector}</li>
-        <li>Overall: {health.ready ? "ready" : "not ready"}</li>
-      </ul>
+      <div className="gallery">
+        {photos.map((photo) => {
+          const caption = [formatDate(photo.taken_at), formatCamera(photo.camera_make, photo.camera_model)]
+            .filter(Boolean)
+            .join(", ");
+          return (
+            <Link key={photo.id} href={`/photos/${photo.id}`} className="tile">
+              {/* eslint-disable-next-line @next/next/no-img-element -- the API already serves sized JPEGs */}
+              <img src={photoSrc(photo.id, "thumb")} alt={caption || photo.original_filename} loading="lazy" />
+              {caption && <div className="tile-caption">{caption}</div>}
+            </Link>
+          );
+        })}
+      </div>
     </main>
   );
 }
