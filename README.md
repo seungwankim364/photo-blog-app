@@ -10,8 +10,8 @@ Docker, Kubernetes and AWS setup are maintained separately (`photo-blog-gitops`,
 apps/
   web/   Next.js (App Router, TypeScript)
   api/   FastAPI (Python)
-    app/routers/    endpoints (health, photos)
-    app/services/   file storage and EXIF reading
+    app/routers/    endpoints (health, photos, posts)
+    app/services/   file storage, EXIF reading, resized copies, slugs
     app/schemas/    API response shapes
     app/models/     SQLAlchemy tables
     migrations/     Alembic migrations
@@ -55,6 +55,16 @@ npm run dev
 | `GET /photos/{id}/file` | The image. `size=original` (default), `display` (2048px JPEG) or `thumb` (640px JPEG) |
 | `DELETE /photos/{id}` | Deletes the row and the file |
 
+| `POST /posts` | Create a post: `title`, optional `slug`, `body`, `published`, `photos` (in order, each with an optional `caption`) |
+| `GET /posts` | Published posts, newest first. `include_drafts=true` adds drafts |
+| `GET /posts/{slug}` | One post with its photos and their EXIF. Drafts only with `include_drafts=true` |
+| `PATCH /posts/{id}` | Change only the fields sent. `photos`, when sent, replaces the whole list |
+| `DELETE /posts/{id}` | Deletes the post. Its photos stay |
+
+Without a `slug`, one is made from the title (`Seongsu Walk` → `seongsu-walk`, then `seongsu-walk-2`). A title with no Latin letters gets a short random one, which can be changed later. A slug that's already used is a 409. `published_at` is set the first time a post is published.
+
+Until login exists, drafts are only hidden by the `include_drafts` flag and the write endpoints are open. Both get locked down when authentication is added.
+
 The file type is checked from the content, not the name or the browser's content type. Uploaded files go to `UPLOAD_DIR`.
 
 `display` and `thumb` are made the first time they're requested and saved under `UPLOAD_DIR/variants/`. They're rotated upright, always JPEG (so HEIC shows in every browser) and carry no EXIF, so no GPS location leaks through them.
@@ -63,12 +73,15 @@ The file type is checked from the content, not the name or the browser's content
 
 | Path | What |
 |---|---|
-| `/` | Gallery, newest first by date taken |
+| `/posts` | Published posts, then drafts |
+| `/posts/{slug}` | A post: text, then each photo with its caption and EXIF line |
+| `/posts/new`, `/posts/{slug}/edit` | Write or edit a post, choose and order its photos |
+| `/` | Photo gallery, newest first by date taken |
 | `/photos/{id}` | One photo with its EXIF card, link to the original, delete |
 | `/upload` | Upload one or more photos |
 | `/status` | API, database and pgvector check |
 
-The browser never calls the API directly. `/api/photos/...` in the web app forwards to the API's `/photos/...`, so the API can stay private inside the cluster later.
+The browser never calls the API directly. `/api/photos/...` and `/api/posts/...` in the web app forward to the API's `/photos/...` and `/posts/...`, so the API can stay private inside the cluster later.
 
 ## Configuration
 

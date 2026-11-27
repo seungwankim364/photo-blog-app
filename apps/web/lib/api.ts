@@ -32,6 +32,22 @@ export type Photo = {
 
 export type PhotoDetail = Photo & { exif_raw: Record<string, unknown> };
 
+export type PostSummary = {
+  id: string;
+  slug: string;
+  title: string;
+  published: boolean;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  photo_count: number;
+  cover: Photo | null;
+};
+
+export type PostPhoto = { position: number; caption: string | null; photo: Photo };
+
+export type PostDetail = PostSummary & { body: string; photos: PostPhoto[] };
+
 export type ImageSize = "thumb" | "display" | "original";
 
 /** Image URL for the browser. It goes through this app's /api proxy, because the
@@ -70,5 +86,22 @@ export async function getPhoto(id: string): Promise<PhotoDetail | null> {
   // 422 means the id isn't a valid UUID, which is also "no such photo".
   if (res.status === 404 || res.status === 422) return null;
   if (!res.ok) throw new Error(`GET /photos/${id} failed: ${res.status}`);
+  return res.json();
+}
+
+/** Drafts are left out unless asked for. Login comes later, so for now anyone can ask. */
+export async function listPosts({ drafts = false } = {}): Promise<PostSummary[]> {
+  const res = await fetch(`${API_INTERNAL_URL}/posts?include_drafts=${drafts}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`GET /posts failed: ${res.status}`);
+  return res.json();
+}
+
+export async function getPost(slug: string, { drafts = false } = {}): Promise<PostDetail | null> {
+  const res = await fetch(
+    `${API_INTERNAL_URL}/posts/${encodeURIComponent(slug)}?include_drafts=${drafts}`,
+    { cache: "no-store" },
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`GET /posts/${slug} failed: ${res.status}`);
   return res.json();
 }
