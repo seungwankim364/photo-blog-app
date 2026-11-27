@@ -54,6 +54,28 @@ export function formatSize(bytes: number): string {
     : `${Math.round(bytes / 1024)} KB`;
 }
 
+/** One line under a photo in a post: "iPhone 16 Pro Max, 40mm, f/1.78, 1/695s, ISO 100". */
+export function formatExifLine(p: {
+  camera_make: string | null;
+  camera_model: string | null;
+  focal_length_mm: number | null;
+  focal_35mm: number | null;
+  aperture: number | null;
+  shutter: string | null;
+  iso: number | null;
+}): string {
+  const focal = p.focal_35mm != null ? `${p.focal_35mm}mm` : formatFocal(p.focal_length_mm, null);
+  return [
+    formatCamera(p.camera_make, p.camera_model),
+    focal,
+    formatAperture(p.aperture),
+    formatShutter(p.shutter),
+    p.iso == null ? null : `ISO ${p.iso}`,
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
 function trim(n: number): string {
   return String(Number(n.toFixed(2)));
 }

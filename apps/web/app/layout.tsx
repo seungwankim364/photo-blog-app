@@ -17,6 +17,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             Seungwan&apos;s Photo Blog
           </Link>
           <nav className="site-nav">
+            <Link href="/posts">Posts</Link>
             <Link href="/">Photos</Link>
             <Link href="/upload">Upload</Link>
             <Link href="/status">Status</Link>
